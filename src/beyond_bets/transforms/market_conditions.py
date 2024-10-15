@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from pyspark.sql import DataFrame, SparkSession
 from beyond_bets.base.transform import Transform
 from beyond_bets.datasets.bets import Bets
-from pyspark.sql import functions as F
+from pyspark.sql import functions as fn
 
 
 spark = SparkSession.builder.getOrCreate()
@@ -23,23 +23,23 @@ class BetGrader(Transform):
             "grade",
             "timestamp",
         ]
-        select_cols = [F.col(column) for column in select_cols]
+        select_cols = [fn.col(column) for column in select_cols]
 
         df = (
             self.bets.repartition(100)
-            .withColumn("minute", F.date_trunc("minute", F.col("timestamp")))
-            .orderBy(F.col("minute").desc())
+            .withColumn("minute", fn.date_trunc("minute", fn.col("timestamp")))
+            .orderBy(fn.col("minute").desc())
             .filter(
-                F.col("minute") >= (self.start_time - timedelta(minutes=15))
+                fn.col("minute") >= (self.start_time - timedelta(minutes=15))
             )
         )
         df_avg = df.groupBy("market").agg(
-            F.avg(F.col("bet_amount")).alias("avg_bet")
+            fn.avg(fn.col("bet_amount")).alias("avg_bet")
         )
         return (
             df.join(df_avg, "market")
             .withColumn(
-                "grade", F.try_divide(F.col("bet_amount"), F.col("avg_bet"))
+                "grade", fn.try_divide(fn.col("bet_amount"), fn.col("avg_bet"))
             )
             .select(*select_cols)
         )

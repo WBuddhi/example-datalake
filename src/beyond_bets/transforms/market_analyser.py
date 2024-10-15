@@ -1,7 +1,7 @@
 from pyspark.sql import DataFrame, SparkSession
 from beyond_bets.base.transform import Transform
 from beyond_bets.datasets.bets import Bets
-from pyspark.sql import functions as F
+from pyspark.sql import functions as fn
 
 
 class InvalidEntityException(Exception):
@@ -69,8 +69,8 @@ class MarketAnalyser(Transform):
             self.bets.repartition(100)
             .withColumn(
                 self.alias[self.time_scope],
-                F.date_trunc(self.time_scope, F.col("timestamp")),
+                fn.date_trunc(self.time_scope, fn.col("timestamp")),
             )
             .groupBy(self.group_by)
-            .agg(F.sum(F.col("bet_amount")).alias("total_bets"))
+            .agg(fn.sum(fn.col("bet_amount")).alias("total_bets"))
         )
